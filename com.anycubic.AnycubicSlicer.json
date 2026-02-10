@@ -29,6 +29,7 @@
           "type": "file",
           "path": "https://cdn-universe-slicer.anycubic.com/prod/pool/main/a/anycubicslicernext/anycubicslicernext_1.3.7171_amd64.deb",
           "sha256": "67858994781498863f6991199341c305a465053648679f298836371715423871"
+	  "dest-filename": "anycubic.deb"
         },
         {
           "type": "file",
@@ -37,7 +38,7 @@
         }
       ],
       "build-commands": [
-        "ar x anycubicslicernext_*.deb",
+        "ar x anycubic.deb",
         "tar xf data.tar.gz || tar xf data.tar.xz",
         "cp -r usr/* /app/",
         "mkdir -p /app/share/AnycubicSlicerNext",
