@@ -51,14 +51,20 @@ jobs:
             echo "Already up to date."
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Build Flatpak
+          
+          - name: Build Flatpak
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
-          # Installera runtimes inuti containern ifall de saknas
           flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+          # 1. Bygg appen
           flatpak-builder --repo=repo --force-clean --install-deps-from=flathub build-dir com.anycubic.AnycubicSlicer.json
-          flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer
+
+          # 2. Hämta branchen dynamiskt från manifestet
+          APP_BRANCH=$(jq -r '.branch // "master"' com.anycubic.AnycubicSlicer.json)
+
+          # 3. Skapa bundlen med rätt branch
+          flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer "$APP_BRANCH"
 
       - name: Upload Artifact
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
