@@ -8,7 +8,6 @@ on:
 jobs:
   check-and-build:
     runs-on: ubuntu-latest
-    # Vi tar bort 'container:' på job-nivå för att kunna använda Ubuntu-verktyg först
 
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +15,6 @@ jobs:
       - name: Check for Updates from Anycubic Repo
         id: updater
         run: |
-          # Nu körs detta på Ubuntu-hosten, där 'jq' och 'curl' finns redo!
           curl -s https://cdn-universe-slicer.anycubic.com/prod/dists/noble/main/binary-amd64/Packages > Packages
           
           REMOTE_VERSION=$(grep "^Version:" Packages | tail -n 1 | awk '{print $2}')
@@ -46,7 +44,6 @@ jobs:
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
         uses: docker://bilelmoussaoui/flatpak-github-actions:gnome-47
         with:
-          # Här kör vi själva bygget inuti Flatpak-containern
           run: |
             flatpak-builder --repo=repo --force-clean build-dir com.anycubic.AnycubicSlicer.json
             flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer
