@@ -1,16 +1,14 @@
-name: Build and Auto-Update Flatpak
+iname: Build and Auto-Update Flatpak
 
 on:
   schedule:
-    - cron: '0 0 * * 1' # Körs varje måndag kl 00:00
-  workflow_dispatch: # Tillåter dig att starta bygget manuellt med en knapp
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
 
 jobs:
   check-and-build:
     runs-on: ubuntu-latest
-    container:
-      image: bilelmoussaoui/flatpak-github-actions:gnome-47
-      options: --privileged
+    # Vi tar bort 'container:' på job-nivå för att kunna använda Ubuntu-verktyg först
 
     steps:
       - uses: actions/checkout@v4
@@ -18,32 +16,26 @@ jobs:
       - name: Check for Updates from Anycubic Repo
         id: updater
         run: |
-          # 1. Hämta Packages-indexet
+          # Nu körs detta på Ubuntu-hosten, där 'jq' och 'curl' finns redo!
           curl -s https://cdn-universe-slicer.anycubic.com/prod/dists/noble/main/binary-amd64/Packages > Packages
           
-          # 2. Extrahera info från sista paketet i listan
           REMOTE_VERSION=$(grep "^Version:" Packages | tail -n 1 | awk '{print $2}')
           REMOTE_PATH=$(grep "^Filename:" Packages | tail -n 1 | awk '{print $2}')
           REMOTE_SHA=$(grep "^SHA256:" Packages | tail -n 1 | awk '{print $2}')
           FULL_URL="https://cdn-universe-slicer.anycubic.com/prod/$REMOTE_PATH"
           
-          # 3. Läs nuvarande version från ditt manifest
           CURRENT_VERSION=$(jq -r '.branch' com.anycubic.AnycubicSlicer.json)
           
           echo "Current local version: $CURRENT_VERSION"
           echo "Latest remote version: $REMOTE_VERSION"
           
-          # 4. Jämför versioner
           if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
             echo "New version found! Updating manifest..."
-            
-            # Uppdatera manifestet med de nya värdena
             jq --arg ver "$REMOTE_VERSION" \
                --arg url "$FULL_URL" \
                --arg sha "$REMOTE_SHA" \
                '.modules[0].sources[0].url = $url | .modules[0].sources[0].sha256 = $sha | .branch = $ver | .modules[0].sources[0].type = "file"' \
                com.anycubic.AnycubicSlicer.json > temp.json && mv temp.json com.anycubic.AnycubicSlicer.json
-            
             echo "update_needed=true" >> $GITHUB_OUTPUT
           else
             echo "Already up to date."
@@ -52,15 +44,18 @@ jobs:
 
       - name: Build Flatpak
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
-        run: |
-          flatpak-builder --repo=repo --force-clean build-dir com.anycubic.AnycubicSlicer.json
-          flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer
+        uses: docker://bilelmoussaoui/flatpak-github-actions:gnome-47
+        with:
+          # Här kör vi själva bygget inuti Flatpak-containern
+          run: |
+            flatpak-builder --repo=repo --force-clean build-dir com.anycubic.AnycubicSlicer.json
+            flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer
 
       - name: Upload Artifact
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: anycubic-slicer-${{ github.sha }}
+          name: anycubic-slicer-bundle
           path: anycubic-slicer.flatpak
 
       - name: Commit Updated Manifest
@@ -69,5 +64,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add com.anycubic.AnycubicSlicer.json
-          git commit -m "Auto-update to Anycubic Slicer version $(jq -r '.branch' com.anycubic.AnycubicSlicer.json)"
+          git commit -m "Auto-update to version $(jq -r '.branch' com.anycubic.AnycubicSlicer.json)"
           git push
