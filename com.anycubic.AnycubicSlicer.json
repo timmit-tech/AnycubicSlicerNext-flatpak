@@ -1,0 +1,53 @@
+{
+  "id": "com.anycubic.AnycubicSlicer",
+  "runtime": "org.gnome.Platform",
+  "runtime-version": "47",
+  "sdk": "org.gnome.Sdk",
+  "command": "anycubic-slicer-wrapper",
+  "separate-locales": false,
+  "finish-args": [
+    "--share=ipc",
+    "--socket=x11",
+    "--socket=wayland",
+    "--socket=pulseaudio",
+    "--share=network",
+    "--device=all",
+    "--filesystem=home",
+    "--filesystem=xdg-run/gvfs",
+    "--filesystem=/run/media",
+    "--filesystem=/media",
+    "--socket=session-bus",
+    "--talk-name=org.freedesktop.Avahi",
+    "--system-talk-name=org.freedesktop.Avahi"
+  ],
+  "modules": [
+    {
+      "name": "anycubic-slicer",
+      "buildsystem": "simple",
+      "sources": [
+        {
+          "type": "file",
+          "path": "anycubicslicernext_1.3.96_amd64.deb",
+          "sha256": "6a8bbac204a6dba69b02ec687079d961aaa3684085f020f2dfca7a83ea52ed64"
+        },
+        {
+          "type": "file",
+          "path": "anycubic-slicer-wrapper.sh",
+          "dest-filename": "anycubic-slicer-wrapper"
+        }
+      ],
+      "build-commands": [
+        "ar x anycubicslicernext_*.deb",
+        "tar xf data.tar.gz || tar xf data.tar.xz",
+        "cp -r usr/* /app/",
+        "mkdir -p /app/share/AnycubicSlicerNext",
+        "cp -r /app/share/AnycubicSlicerNext/resources /app/resources || true",
+        "install -Dm755 anycubic-slicer-wrapper /app/bin/anycubic-slicer-wrapper",
+        "install -Dm644 /app/share/applications/AnycubicSlicer.desktop /app/share/applications/com.anycubic.AnycubicSlicer.desktop",
+        "sed -i 's/Icon=.*/Icon=com.anycubic.AnycubicSlicer/' /app/share/applications/com.anycubic.AnycubicSlicer.desktop",
+        "sed -i 's/Exec=.*/Exec=anycubic-slicer-wrapper %U/' /app/share/applications/com.anycubic.AnycubicSlicer.desktop",
+        "install -Dm644 /app/share/AnycubicSlicerNext/resources/images/AnycubicSlicer_192px.png /app/share/icons/hicolor/192x192/apps/com.anycubic.AnycubicSlicer.png"
+      ]
+    }
+  ]
+}
