@@ -6,11 +6,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-and-build:
+  flatpak:
+    name: Build Anycubic Slicer
     runs-on: ubuntu-latest
+    container:
+      image: bilelmoussaoui/flatpak-github-actions:gnome-47
+      options: --privileged
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install JQ
+        run: |
+          # Containern kör ofta Fedora/Alpine, men den här är baserad på en miljö där vi kan hämta jq
+          # Om dnf inte finns, testar vi att bara ladda ner binären direkt för att vara 100% säkra
+          curl -L -o /usr/bin/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
+          chmod +x /usr/bin/jq
 
       - name: Check for Updates from Anycubic Repo
         id: updater
@@ -22,7 +33,8 @@ jobs:
           REMOTE_SHA=$(grep "^SHA256:" Packages | tail -n 1 | awk '{print $2}')
           FULL_URL="https://cdn-universe-slicer.anycubic.com/prod/$REMOTE_PATH"
           
-          CURRENT_VERSION=$(jq -r '.branch' com.anycubic.AnycubicSlicer.json)
+          # Hämta nuvarande version från manifestet
+          CURRENT_VERSION=$(jq -r '.branch // "0"' com.anycubic.AnycubicSlicer.json)
           
           echo "Current local version: $CURRENT_VERSION"
           echo "Latest remote version: $REMOTE_VERSION"
@@ -42,13 +54,11 @@ jobs:
 
       - name: Build Flatpak
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
-        with:
-          bundle: anycubic-slicer.flatpak
-          manifest-path: com.anycubic.AnycubicSlicer.json
-          cache: true
-          arch: x86_64
-          build-bundle: true
+        run: |
+          # Installera runtimes inuti containern ifall de saknas
+          flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak-builder --repo=repo --force-clean --install-deps-from=flathub build-dir com.anycubic.AnycubicSlicer.json
+          flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer
 
       - name: Upload Artifact
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
@@ -60,8 +70,11 @@ jobs:
       - name: Commit Updated Manifest
         if: steps.updater.outputs.update_needed == 'true'
         run: |
+          # Vi måste installera git i containern om det saknas, 
+          # men oftast finns det. Vi kör en säker check.
+          git config --global --add safe.directory /__w/anycubic-slicer-flatpak/anycubic-slicer-flatpak
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add com.anycubic.AnycubicSlicer.json
-          git commit -m "Auto-update to version $(jq -r '.branch' com.anycubic.AnycubicSlicer.json)"
+          git commit -m "Auto-update to version $REMOTE_VERSION" || echo "No changes to commit"
           git push
