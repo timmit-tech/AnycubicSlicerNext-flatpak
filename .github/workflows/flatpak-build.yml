@@ -22,8 +22,6 @@ jobs:
 
       - name: Install JQ
         run: |
-          # Containern kör ofta Fedora/Alpine, men den här är baserad på en miljö där vi kan hämta jq
-          # Om dnf inte finns, testar vi att bara ladda ner binären direkt för att vara 100% säkra
           curl -L -o /usr/bin/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64
           chmod +x /usr/bin/jq
 
@@ -37,11 +35,13 @@ jobs:
           REMOTE_SHA=$(grep "^SHA256:" Packages | tail -n 1 | awk '{print $2}')
           FULL_URL="https://cdn-universe-slicer.anycubic.com/prod/$REMOTE_PATH"
           
-          # Hämta nuvarande version från manifestet
           CURRENT_VERSION=$(jq -r '.branch // "0"' com.anycubic.AnycubicSlicer.json)
           
           echo "Current local version: $CURRENT_VERSION"
           echo "Latest remote version: $REMOTE_VERSION"
+          
+          # Exportera versionen så andra steg kan använda den
+          echo "remote_version=$REMOTE_VERSION" >> $GITHUB_OUTPUT
           
           if [ "$REMOTE_VERSION" != "$CURRENT_VERSION" ]; then
             echo "New version found! Updating manifest..."
@@ -55,27 +55,41 @@ jobs:
             echo "Already up to date."
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
-          
+
       - name: Build Flatpak
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-
-          # 1. Bygg appen
           flatpak-builder --repo=repo --force-clean --install-deps-from=flathub build-dir com.anycubic.AnycubicSlicer.json
-
-          # 2. Hämta branchen dynamiskt från manifestet
-          APP_BRANCH=$(jq -r '.branch // "master"' com.anycubic.AnycubicSlicer.json)
-
-          # 3. Skapa bundlen med rätt branch
-          flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer "$APP_BRANCH"
+          
+          # Hämta version och skapa filnamn
+          VERSION="${{ steps.updater.outputs.remote_version }}"
+          FILENAME="anycubic-slicer-$VERSION.flatpak"
+          
+          flatpak build-bundle repo "$FILENAME" com.anycubic.AnycubicSlicer "$VERSION"
+          
+          # Spara filnamnet till miljövariabler för senare steg
+          echo "BUNDLE_FILENAME=$FILENAME" >> $GITHUB_ENV
 
       - name: Upload Artifact
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: anycubic-slicer-bundle
-          path: anycubic-slicer.flatpak
+          name: anycubic-slicer-${{ steps.updater.outputs.remote_version }}
+          path: ${{ env.BUNDLE_FILENAME }}
+
+      - name: Create Release
+        if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.updater.outputs.remote_version }}
+          name: Anycubic Slicer Next v${{ steps.updater.outputs.remote_version }}
+          body: |
+            Automatisk paketering av Anycubic Slicer Next.
+            Version: `${{ steps.updater.outputs.remote_version }}`
+          files: ${{ env.BUNDLE_FILENAME }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit Updated Manifest
         if: steps.updater.outputs.update_needed == 'true'
@@ -84,6 +98,5 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
           git add com.anycubic.AnycubicSlicer.json
-          UPDATED_VER=$(jq -r '.branch' com.anycubic.AnycubicSlicer.json)
-          git commit -m "Auto-update to version $REMOTE_VERSION" || echo "No changes to commit"
+          git commit -m "Auto-update to version ${{ steps.updater.outputs.remote_version }}" || echo "No changes to commit"
           git push
