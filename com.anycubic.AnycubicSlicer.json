@@ -27,8 +27,8 @@
       "sources": [
         {
           "type": "file",
-          "path": "anycubicslicernext_1.3.96_amd64.deb",
-          "sha256": "6a8bbac204a6dba69b02ec687079d961aaa3684085f020f2dfca7a83ea52ed64"
+          "path": "https://cdn-universe-slicer.anycubic.com/prod/pool/main/a/anycubicslicernext/anycubicslicernext_1.3.7171_amd64.deb",
+          "sha256": "67858994781498863f6991199341c305a465053648679f298836371715423871"
         },
         {
           "type": "file",
