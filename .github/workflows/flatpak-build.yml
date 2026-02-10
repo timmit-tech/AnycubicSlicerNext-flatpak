@@ -52,7 +52,7 @@ jobs:
             echo "update_needed=false" >> $GITHUB_OUTPUT
           fi
           
-          - name: Build Flatpak
+      - name: Build Flatpak
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
