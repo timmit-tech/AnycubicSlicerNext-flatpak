@@ -76,11 +76,10 @@ jobs:
       - name: Commit Updated Manifest
         if: steps.updater.outputs.update_needed == 'true'
         run: |
-          # Vi måste installera git i containern om det saknas, 
-          # men oftast finns det. Vi kör en säker check.
-          git config --global --add safe.directory /__w/anycubic-slicer-flatpak/anycubic-slicer-flatpak
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
           git add com.anycubic.AnycubicSlicer.json
+          UPDATED_VER=$(jq -r '.branch' com.anycubic.AnycubicSlicer.json)
           git commit -m "Auto-update to version $REMOTE_VERSION" || echo "No changes to commit"
           git push
