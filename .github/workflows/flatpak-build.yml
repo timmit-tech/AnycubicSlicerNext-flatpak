@@ -45,11 +45,10 @@ jobs:
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           bundle: anycubic-slicer.flatpak
-          manifest: com.anycubic.AnycubicSlicer.json
+          manifest-path: com.anycubic.AnycubicSlicer.json
           cache: true
           arch: x86_64
-          # Vi anger runtimen här för att säkerställa kompatibilitet
-          runtime-version: "47"
+          build-bundle: true
 
       - name: Upload Artifact
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
