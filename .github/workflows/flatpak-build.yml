@@ -1,4 +1,4 @@
-iname: Build and Auto-Update Flatpak
+name: Build and Auto-Update Flatpak
 
 on:
   schedule:
@@ -42,11 +42,14 @@ jobs:
 
       - name: Build Flatpak
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
-        uses: docker://bilelmoussaoui/flatpak-github-actions:gnome-47
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
-          run: |
-            flatpak-builder --repo=repo --force-clean build-dir com.anycubic.AnycubicSlicer.json
-            flatpak build-bundle repo anycubic-slicer.flatpak com.anycubic.AnycubicSlicer
+          bundle: anycubic-slicer.flatpak
+          manifest: com.anycubic.AnycubicSlicer.json
+          cache: true
+          arch: x86_64
+          # Vi anger runtimen här för att säkerställa kompatibilitet
+          runtime-version: "47"
 
       - name: Upload Artifact
         if: steps.updater.outputs.update_needed == 'true' || github.event_name == 'workflow_dispatch'
