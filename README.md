@@ -4,7 +4,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/timmit-tech/AnycubicSlicerNext-flatpak?label=Version&color=blue)](https://github.com/timmit-tech/AnycubicSlicerNext-flatpak/releases)
 [![License](https://img.shields.io/github/license/timmit-tech/AnycubicSlicerNext-flatpak)](https://github.com/timmit-tech/AnycubicSlicerNext-flatpak/blob/master/LICENSE)
 
-An unofficial **Flatpak packaging** for [Anycubic Slicer Next](https://www.anycubic.com/pages/anycubic-slicer). 
+An unofficial **Flatpak packaging** for [Anycubic Slicer Next](https://anycubic.com/en/slicerNextDownload). 
 
 Anycubic Slicer Next is based on **OrcaSlicer** and is optimized for Anycubic FDM printers (Kobra series, etc.). While Anycubic officially only provides a `.deb` package for Ubuntu 24.04, this Flatpak allows you to run the slicer on **any Linux distribution** (Fedora, Arch, Debian, SteamOS, etc.) in a secure, sandboxed environment.
 
