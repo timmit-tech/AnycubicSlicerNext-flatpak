@@ -1,55 +1,50 @@
-# Anycubic Slicer Next - Flatpak Packaging
-This repository provides a Flatpak manifest to package the official Anycubic Slicer Next for Linux. Since Anycubic only provides a .deb package for Ubuntu 24.04, this Flatpak version allows you to run the slicer on almost any Linux distribution (Fedora, Arch, Debian, etc.) in a secure, sandboxed environment.
+# Anycubic Slicer Next - Flatpak (Unofficial)
 
-Features
-Compatibility: Runs on any distro with Flatpak installed.
+[![Build and Auto-Update Flatpak](https://github.com/timmit-tech/AnycubicSlicerNext-flatpak/actions/workflows/flatpak-build.yml/badge.svg)](https://github.com/timmit-tech/AnycubicSlicerNext-flatpak/actions/workflows/flatpak-build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/timmit-tech/AnycubicSlicerNext-flatpak?label=Version&color=blue)](https://github.com/timmit-tech/AnycubicSlicerNext-flatpak/releases)
+[![License](https://img.shields.io/github/license/timmit-tech/AnycubicSlicerNext-flatpak)](https://github.com/timmit-tech/AnycubicSlicerNext-flatpak/blob/master/LICENSE)
 
-Stability: Uses the GNOME 47 Runtime to match the slicer's dependencies.
+An unofficial **Flatpak packaging** for [Anycubic Slicer Next](https://www.anycubic.com/pages/anycubic-slicer). 
 
-Fixes: Includes specific WebKit fixes to prevent the "white screen" login and home tab issues.
+Anycubic Slicer Next is based on **OrcaSlicer** and is optimized for Anycubic FDM printers (Kobra series, etc.). While Anycubic officially only provides a `.deb` package for Ubuntu 24.04, this Flatpak allows you to run the slicer on **any Linux distribution** (Fedora, Arch, Debian, SteamOS, etc.) in a secure, sandboxed environment.
 
-Hardware Access: Supports USB printing and local network discovery (Kobra series).
+---
 
-Installation
-1. Prerequisites
-Ensure you have flatpak installed on your system. If not, follow the setup guide.
+## 🚀 Installation
 
-2. Download the Bundle
-Go to the [Releases] section of this repository and download the latest .flatpak file.
+### 1. Download
+Go to the [Latest Releases](https://github.com/timmit-tech/AnycubicSlicerNext-flatpak/releases/latest) page and download the `.flatpak` file.
 
-3. Install
-Run the following command in your terminal:
+### 2. Install
+Open your terminal in the download folder and run:
+```bash
+flatpak install --user anycubic-slicer-*.flatpak
+```
+### 3. Launch
 
-Bash
-flatpak install --user anycubic-slicer.flatpak
-How to Build Locally
-If you want to build the package yourself:
+You can find "Anycubic Slicer Next" in your application menu, or launch it via terminal:
+```bash
+flatpak run com.anycubic.AnycubicSlicer
+```
+## :hammer_and_wrench: How it Works (CI/CD Automation)
+This repository is fully automated using GitHub Actions:
 
-Clone the repo:
+* **Weekly Check:** Every Monday, a workflow checks Anycubic's official Ubuntu repository for updates.
 
-Bash
-git clone https://github.com/YOUR_USERNAME/anycubic-slicer-flatpak.git
-cd anycubic-slicer-flatpak
-Install the SDK:
+* **Auto-Update:** If a new version is found, the manifest is automatically updated with the new URL and SHA256 hash.
 
-Bash
-flatpak install flathub org.gnome.Sdk//47 org.gnome.Platform//47
-Build and Install:
+* **Auto-Build:** A new Flatpak bundle is built and automatically published as a GitHub Release.
 
-Bash
-flatpak-builder --user --install --force-clean build-dir com.anycubic.AnycubicSlicer.json
-Known Issues
-GTK Warnings: You might see Gtk-CRITICAL assertions in the terminal. These are common in wxWidgets-based slicers (like OrcaSlicer/PrusaSlicer) and can be safely ignored.
+## 🔧 Permissions & Troubleshooting
+Networking (OctoPrint/Moonraker/Anycubic Cloud)
+If you have trouble connecting to your printer over the network, you may need to grant additional permissions. The easiest way to manage this is via Flatseal.
 
-GPU Acceleration: If the 3D view is laggy or flickering, try running with: flatpak run --env=WEBKIT_DISABLE_COMPOSITING_MODE=1 com.anycubic.AnycubicSlicer
+Wayland vs X11
+If the application flickers or doesn't start on Wayland, try forcing it to run via XWayland:
+```bash
+flatpak run --nosocket=wayland com.anycubic.AnycubicSlicer
+```
+## ⚖️ Legal Disclaimer
+This is an unofficial community project. Anycubic Slicer Next is developed and owned by Anycubic. The software is based on OrcaSlicer and is subject to the AGPL-3.0 License. This repository only provides the build scripts and manifest to containerize the official binary.
 
-Legal Disclaimer
-This project is not affiliated with, maintained, or endorsed by Anycubic. Anycubic Slicer Next is based on OrcaSlicer (AGPL v3). The build process downloads official binaries directly from Anycubic's servers. All trademarks and logos belong to their respective owners.
-
-License
-The manifest and wrapper scripts in this repository are licensed under the MIT License.
-
-Pro-tip for your GitHub Repo:
-When you upload this, go to your repository Settings and look for the "About" section on the right side. Add these tags (topics) to help people find your project: anycubic slicernext flatpak 3d-printing linux kobra-s1
-
-Would you like me to help you set up the MIT License file content as well, or are you all set with the GitHub template?
+## Maintained by timmit-tech
