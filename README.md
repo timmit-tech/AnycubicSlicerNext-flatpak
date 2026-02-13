@@ -47,4 +47,4 @@ flatpak run --nosocket=wayland com.anycubic.AnycubicSlicer
 ## ⚖️ Legal Disclaimer
 This is an unofficial community project. Anycubic Slicer Next is developed and owned by Anycubic. The software is based on OrcaSlicer and is subject to the AGPL-3.0 License. This repository only provides the build scripts and manifest to containerize the official binary.
 
-## Maintained by timmit-tech
+## Maintained by [timmit-tech](https://github.com/timmit-tech)
